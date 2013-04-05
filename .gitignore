@@ -1,0 +1,8 @@
+# Python
+*.pyc
+# venv
+/venv
+# ipyenv
+ipyenv.py
+!/venv/.sitelibs
+!/tests/.testfor

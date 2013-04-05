@@ -1,0 +1,5 @@
+[libext]
+extdirs=./venv
+[test]
+extdirs=./venv
+testdirs=./tests
