@@ -20,9 +20,15 @@ class Froshki(object):
         instance._registered_attrs = attr_names
         return instance
 
-    def __init__(self, **init_attrs):
+    def __init__(self, source=None, **init_attrs):
         self._data = {}
-        for name in init_attrs:
+        self._overwrite_kw_attrs(init_attrs)
+
+    def _overwrite_kw_attrs(self, init_attrs):
+        self._update_attrs(init_attrs)
+
+    def _update_attrs(self, attr_source):
+        for name in attr_source:
             if name not in self._registered_attrs:
                 raise TypeError(
                     "'{klass}' has no attirbute {attr}".format(
@@ -31,7 +37,7 @@ class Froshki(object):
                     )
                 )
             else:
-                self._data[name] = init_attrs[name]
+                self._data[name] = attr_source[name]
 
 
 class Attribute(object):
