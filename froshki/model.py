@@ -5,6 +5,9 @@ class Froshki(object):
     """
     Base class for Froshki objetcs.
     """
+
+    default_values = {}
+
     def __new__(klass, *args, **kwargs):
         attr_names = []
         class_dict = klass.__dict__
@@ -22,7 +25,18 @@ class Froshki(object):
 
     def __init__(self, source=None, **init_attrs):
         self._data = {}
+        # Attribute values' overwrites are ordered
+        # by asccending assignment-style explicity.
+        self._attrs_default()
+        if source is not None:
+            self._attrs_from_source(source)
         self._overwrite_kw_attrs(init_attrs)
+
+    def _attrs_default(self):
+        self._update_attrs(self.__class__.default_values)
+
+    def _attrs_from_source(self, attr_source):
+        self._update_attrs(attr_source)
 
     def _overwrite_kw_attrs(self, init_attrs):
         self._update_attrs(init_attrs)
