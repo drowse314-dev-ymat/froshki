@@ -19,7 +19,7 @@ class Froshki(object):
                     name, obj,
                 )
                 setattr(klass, name, attr_descriptor)
-        instance = object.__new__(klass, *args, **kwargs)
+        instance = object.__new__(klass)
         instance._registered_attrs = attr_names
         return instance
 
