@@ -33,6 +33,12 @@ class TestModel(unittest.TestCase):
         registration.user_name = 'ymat'
         self.assertEqual(registration.user_name, 'ymat')
 
+        # Class attributes are accessible even after __new__.
+        self.assertIsInstance(RegisterFormInput.user_id, Attribute)
+        self.assertIsInstance(RegisterFormInput.user_name, Attribute)
+        self.assertIsInstance(RegisterFormInput.user_age, Attribute)
+        self.assertIsInstance(RegisterFormInput.password, Attribute)
+
     def test_attribute_source_hooks(self):
 
         # Default settings.
