@@ -51,14 +51,28 @@ class Froshki(object):
                     )
                 )
             else:
-                self._data[name] = attr_source[name]
+                self._set_attr_data(name, attr_source[name])
+
+    def _set_attr_data(self, name, input_value):
+        attr_obj = getattr(self.__class__, name)
+        input_value = attr_obj.transform(input_value)
+        self._data[name] = input_value
 
 
 class Attribute(object):
     """
     Base class for Froshki objects' attributes.
     """
-    pass
+
+    @classmethod
+    def transform(klass, input_value):
+        """
+        Transform input values to store into Froshki_data.
+
+
+        Override this method for customization.
+        """
+        return input_value
 
 
 class AttributeDescriptor(object):
@@ -80,4 +94,9 @@ class AttributeDescriptor(object):
         if not instance:
             return object.__set__(self, instance, value)
         else:
-            instance._data[self._attr_name] = value
+            self._set_data(instance, value)
+
+    def _set_data(self, froshki, input_value):
+        attr_obj = self._attr
+        input_value = attr_obj.transform(input_value)
+        froshki._data[self._attr_name] = input_value
