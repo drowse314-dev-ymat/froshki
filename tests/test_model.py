@@ -5,7 +5,7 @@ from froshki import Froshki
 from froshki.model import Attribute
 
 
-class TestModel(unittest.TestCase):
+class TestAttributeModeling(unittest.TestCase):
 
     def test_attribute_access(self):
 
