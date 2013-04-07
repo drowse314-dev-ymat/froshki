@@ -1,8 +1,7 @@
 # Python
 *.pyc
 # venv
-/venv
+/venv/*
 # ipyenv
 ipyenv.py
 !/venv/.sitelibs
-!/tests/.testfor
