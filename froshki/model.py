@@ -43,8 +43,9 @@ class Froshki(object):
         self._update_attrs(init_attrs)
 
     def _update_attrs(self, attr_source):
+        registered_attrs = self._registered_attrs
         for name in attr_source:
-            if name not in self._registered_attrs:
+            if name not in registered_attrs:
                 raise TypeError(
                     "'{klass}' has no attirbute {attr}".format(
                         klass=self.__class__.__name__,
