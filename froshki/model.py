@@ -11,16 +11,17 @@ class Froshki(object):
     def __new__(klass, *args, **kwargs):
         attr_names = []
         class_dict = klass.__dict__
-        for name in class_dict:
-            attr_names.append(name)
-            obj = class_dict[name]
-            if isinstance(obj, Attribute):
-                attr_descriptor = AttributeDescriptor(
-                    name, obj,
-                )
-                setattr(klass, name, attr_descriptor)
+        if '_registered_attrs' not in class_dict:
+            for name in class_dict:
+                obj = class_dict[name]
+                if isinstance(obj, Attribute):
+                    attr_names.append(name)
+                    attr_descriptor = AttributeDescriptor(
+                        name, obj,
+                    )
+                    setattr(klass, name, attr_descriptor)
+            setattr(klass, '_registered_attrs', tuple(attr_names))
         instance = object.__new__(klass)
-        instance._registered_attrs = attr_names
         return instance
 
     def __init__(self, source=None, **init_attrs):
