@@ -4,6 +4,38 @@
 class Froshki(object):
     """
     Base class for Froshki objetcs.
+
+    Basic usage:
+    >>> # Define attribute types.
+    >>> class ResourceId(Attribute):
+    ...     @classmethod
+    ...     def transform(klass, input_value):
+    ...         return int(input_value)
+    ...     @classmethod
+    ...     def validate(klass, input_value):
+    ...         if input_value in (1,5,7,9):
+    ...             return True, input_value
+    ...         else:
+    ...             return False, 'resource id not found'
+    >>> class Filetype(Attribute):
+    ...     @classmethod
+    ...     def validate(klass, input_value):
+    ...         if input_value in ('pdf', 'txt', 'mobi'):
+    ...             return True, input_value
+    ...         else:
+    ...             return False, 'filetype unavailable'
+    >>> # Attach to Froshki subclass.
+    >>> class Download(Froshki):
+    ...     resource_id = ResourceId()
+    ...     filetype = Filetype()
+    >>>
+    >>> download = Download(resource_id='9', filetype='pdf')
+    >>> download.validate()  # Must be called for data transformation or validation.
+    True
+    >>> download.resource_id
+    9
+    >>> download.filetype
+    'pdf'
     """
 
     default_values = {}
@@ -104,9 +136,9 @@ class Attribute(object):
     @classmethod
     def transform(klass, input_value):
         """
-        Transform input values to store into Froshki_data.
+        Transform input values to store into Froshki._data.
 
-
+        klass.transform(input_value) -> value_to_store
         Override this method for customization.
         """
         return input_value
