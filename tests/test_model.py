@@ -100,6 +100,7 @@ class TestAttributeModeling(unittest.TestCase):
             id='1231', user_id=213511,
             user_fname='y', user_lname='mat',
         )
+        self.assertTrue(user.validate())  # Must be called to transform.
         self.assertEqual(user.id, 1231)
         self.assertEqual(user.user_id, '213511')
         self.assertEqual(user.user_fname, 'y')
@@ -107,5 +108,54 @@ class TestAttributeModeling(unittest.TestCase):
         # With assignment.
         user.id = '2142'
         user.user_id = 73894
+        self.assertTrue(user.validate())  # Even after assignments.
         self.assertEqual(user.id, 2142)
         self.assertEqual(user.user_id, '73894')
+
+
+class TestAttrValidation(unittest.TestCase):
+
+    def test_attr_validation(self):
+
+        class ResourceId(Attribute):
+            @classmethod
+            def transform(klass, input_value):
+                return int(input_value)
+            @classmethod
+            def validate(klass, input_value):
+                if input_value in (1,5,7,9):
+                    return True, input_value
+                else:
+                    return False, 'resource id not found'
+
+        class Filetype(Attribute):
+            @classmethod
+            def validate(klass, input_value):
+                if input_value in ('pdf', 'txt', 'mobi'):
+                    return True, input_value
+                else:
+                    return False, 'filetype unavailable'
+
+        class Download(Froshki):
+            resource_id = ResourceId()
+            filetype = Filetype()
+
+        # Valid inputs.
+        download = Download(resource_id='9', filetype='pdf')
+        self.assertTrue(download.validate())
+        self.assertEqual(download.resource_id, 9)
+        self.assertEqual(download.filetype, 'pdf')
+        download.resource_id = '99'  # Invalidate by assignment.
+        self.assertFalse(download.validate())
+        self.assertEqual(
+            download.errors,
+            {'resource_id': 'resource id not found'}
+        )
+        # Invalid inputs.
+        invalid_dl_request = Download(resource_id='34', filetype='doc')
+        self.assertFalse(invalid_dl_request.validate())
+        self.assertEqual(
+            invalid_dl_request.errors,
+            {'resource_id': 'resource id not found',
+             'filetype': 'filetype unavailable'}
+        )

@@ -32,6 +32,14 @@ class Froshki(object):
         if source is not None:
             self._attrs_from_source(source)
         self._overwrite_kw_attrs(init_attrs)
+        # For Validation.
+        self._is_valid = True
+        self._yet_to_validate = set(self._registered_attrs)
+        self._errors = {}
+
+    @property
+    def errors(self):
+        return self._errors.copy()
 
     def _attrs_default(self):
         self._update_attrs(self.__class__.default_values)
@@ -56,9 +64,36 @@ class Froshki(object):
                 self._set_attr_data(name, attr_source[name])
 
     def _set_attr_data(self, name, input_value):
-        attr_obj = getattr(self.__class__, name)
-        input_value = attr_obj.transform(input_value)
         self._data[name] = input_value
+
+    def validate(self, hu=False):
+        """
+        Validate input/stored values -> boolean.
+
+        Also store error messages if input is invalid.
+        """
+        is_valid = self._is_valid
+        for attr_name in self._yet_to_validate:
+            attr_is_valid, value_to_store = self._validate_attr_data(attr_name)
+            self._set_attr_validation_data(
+                attr_name, attr_is_valid, value_to_store
+            )
+            is_valid &= attr_is_valid
+        self._is_valid = is_valid
+        self._yet_to_validate.clear()
+        return is_valid
+
+    def _validate_attr_data(self, attr_name):
+        attr_obj = getattr(self.__class__, attr_name)
+        return attr_obj._validate(self._data[attr_name])
+
+    def _set_attr_validation_data(self, attr_name,
+                                  attr_is_valid, value_to_store):
+        if attr_is_valid:
+            self._errors.pop(attr_name, None)
+            self._data[attr_name] = value_to_store
+        else:
+            self._errors[attr_name] = value_to_store
 
 
 class Attribute(object):
@@ -75,6 +110,28 @@ class Attribute(object):
         Override this method for customization.
         """
         return input_value
+
+    @classmethod
+    def validate(klass, input_value):
+        """
+        Validate input values to store into Froshki._data.
+
+        klass.validate(input_value)
+            -> True, input_value
+        or
+            -> False, error_message
+        Override this method for customization.
+        """
+        return True, input_value
+
+    @classmethod
+    def _validate(klass, input_value):
+        """Validation hook for Froshki object."""
+        try:
+            value_to_store = klass.transform(input_value)
+        except:
+            return False, 'data conversion error: {}'.format(input_value)
+        return klass.validate(value_to_store)
 
 
 class AttributeDescriptor(object):
@@ -99,6 +156,6 @@ class AttributeDescriptor(object):
             self._set_data(instance, value)
 
     def _set_data(self, froshki, input_value):
-        attr_obj = self._attr
-        input_value = attr_obj.transform(input_value)
-        froshki._data[self._attr_name] = input_value
+        attr_name = self._attr_name
+        froshki._data[attr_name] = input_value
+        froshki._yet_to_validate.add(attr_name)
