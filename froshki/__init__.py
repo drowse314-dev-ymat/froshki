@@ -1,3 +1,3 @@
 # encoding: utf-8
 
-from .model import Froshki
+from .model import Froshki, validation_hook

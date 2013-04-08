@@ -1,7 +1,7 @@
 # encoding: utf-8
 
 import unittest
-from froshki import Froshki
+from froshki import Froshki, validation_hook
 from froshki.model import Attribute
 
 
@@ -38,6 +38,17 @@ class TestAttributeModeling(unittest.TestCase):
         self.assertIsInstance(RegisterFormInput.user_name, Attribute)
         self.assertIsInstance(RegisterFormInput.user_age, Attribute)
         self.assertIsInstance(RegisterFormInput.password, Attribute)
+
+        # Froshki.data property.
+        self.assertEqual(
+            registration.data,
+            {
+             'user_id': 'drowse314',
+             'user_name': 'ymat',
+             'user_age': 24,
+             'password': 'ijk2355',
+            }
+        )
 
     def test_attribute_source_hooks(self):
 
@@ -111,6 +122,10 @@ class TestAttributeModeling(unittest.TestCase):
         self.assertTrue(user.validate())  # Even after assignments.
         self.assertEqual(user.id, 2142)
         self.assertEqual(user.user_id, '73894')
+        # Conversion error behaviour.
+        user.id = object
+        self.assertFalse(user.validate())
+        self.assertEqual(user.id, object)
 
 
 class TestAttrValidation(unittest.TestCase):
@@ -151,6 +166,10 @@ class TestAttrValidation(unittest.TestCase):
             download.errors,
             {'resource_id': 'resource id not found'}
         )
+        self.assertEqual(
+            download.data,
+            {'filetype': 'pdf', 'resource_id': '99'}  # Keeps value even in error.
+        )
         # Invalid inputs.
         invalid_dl_request = Download(resource_id='34', filetype='doc')
         self.assertFalse(invalid_dl_request.validate())
@@ -159,3 +178,159 @@ class TestAttrValidation(unittest.TestCase):
             {'resource_id': 'resource id not found',
              'filetype': 'filetype unavailable'}
         )
+
+    def test_nullable_attribute(self):
+
+        import re
+        class Nickname(Attribute):
+            pattern = re.compile('\w+')
+            @classmethod
+            def validate(klass, input_value):
+                if klass.pattern.match(input_value):
+                    return True, input_value
+                else:
+                    return False, 'invalid nickname'
+
+        class IntAttribute(Attribute):
+            @classmethod
+            def transform(klass, input_value): return int(input_value)
+
+        class TextAttribute(Attribute):
+            @classmethod
+            def transform(klass, input_value): return str(input_value)
+
+        class RegisterUser(Froshki):
+            id = IntAttribute()
+            user_id = TextAttribute()
+            nickname = Nickname(nullable=True)
+
+        register_user = RegisterUser(id='1988', user_id='omikoshi')
+        self.assertTrue(register_user.validate())
+        self.assertEqual(register_user.id, 1988)
+        self.assertEqual(register_user.user_id, 'omikoshi')
+        self.assertEqual(register_user.nickname, None)
+        register_user.nickname = 'mksh'
+        self.assertTrue(register_user.validate())
+        self.assertEqual(register_user.nickname, 'mksh')
+
+
+class TestComplexFunctions(unittest.TestCase):
+
+    def test_attr_name_alias(self):
+
+        class ResouceKey(Attribute):
+            @classmethod
+            def transform(klass, input_value):
+                return input_value.lower()
+            @classmethod
+            def validate(klass, input_value):
+                if input_value == 'vxfpf93':
+                    return True, input_value
+                else:
+                    return False, 'invalid resource key'
+
+        class ResourceAccess(Froshki):
+            resource_id = Attribute()
+            user_id = Attribute()
+            resource_key = ResouceKey(key_alias='password')
+
+        access = ResourceAccess(
+            resource_id='1276',
+            user_id='ymat', password='VXFPF93',
+        )
+        self.assertTrue(access.validate())
+        self.assertEqual(access.resource_id, '1276')
+        self.assertEqual(access.user_id, 'ymat')
+        self.assertEqual(access.resource_key, 'vxfpf93')
+        with self.assertRaises(AttributeError):
+            access.password
+        self.assertEqual(
+            access.data,
+            {'resource_id': '1276', 'user_id': 'ymat',
+             'resource_key': 'vxfpf93'}
+        )
+
+        access.resource_key = 'fxfPf93'
+        self.assertFalse(access.validate())
+        self.assertEqual(
+            access.errors,
+            {'resource_key': 'invalid resource key'}
+        )
+
+    def test_attr_modification(self):
+
+        class Search(Froshki):
+            search_key = Attribute(key_alias='key')
+
+        search = Search(key='japanese furoshiki')  # __new__ called for the first time.
+        self.assertTrue(search.validate())
+
+        # Append attribute.
+        Search.search_type = Attribute(key_alias='type')
+        search = Search(
+            key='japanese furoshiki',
+            type='image',
+        )
+        self.assertTrue(search.validate())
+        self.assertEqual(search.search_key, 'japanese furoshiki')
+        self.assertEqual(search.search_type, 'image')
+        # Redefine attribute.
+        Search.search_type = Attribute()
+        with self.assertRaises(TypeError):
+            search = Search(type='movie')
+        search = Search(
+            search_key='japanese furoshiki',
+            search_type='movie',
+        )
+        self.assertTrue(search.validate())
+        self.assertEqual(search.search_key, 'japanese furoshiki')
+        self.assertEqual(search.search_type, 'movie')
+        # Delete attribute.
+        del Search.search_type
+        with self.assertRaises(TypeError):
+            search = Search(search_type='news')
+        search = Search(search_key='russian pirozhki')
+        self.assertTrue(search.validate())
+        self.assertEqual(search.search_key, 'russian pirozhki')
+
+    def test_froshki_validation_hooks(self):
+
+        class ModifyPassword(Froshki):
+            user_id = Attribute()
+            old_password = Attribute()
+            new_password = Attribute()
+            confirm_new_password = Attribute()
+            @validation_hook
+            def confirm_password(self):
+                if self.new_password == self.confirm_new_password:
+                    return True
+                else:
+                    return False
+
+        modify_password = ModifyPassword(
+            user_id='ymat', old_password='vxf',
+            new_password='f8a73', confirm_new_password='f8a73',
+        )
+        self.assertTrue(modify_password.validate())
+        modify_password.confirm_new_password = 'fffff'
+        self.assertFalse(modify_password.validate())
+
+    def test_ignore_unknown_keys(self):
+
+        class Configuration(Froshki):
+            filter_level = Attribute()
+            prediction = Attribute()
+            items_per_page = Attribute()
+
+        attr_source = {
+            'filter_level': 'high',
+            'prediction': True,
+            'items_per_page': 40,
+            'lang': 'ja',
+        }
+        with self.assertRaises(TypeError):
+            config = Configuration(source=attr_source)
+
+        Configuration.ignore_unknown_keys = True
+        config = Configuration(source=attr_source)
+        self.assertTrue(config.validate())

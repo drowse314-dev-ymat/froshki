@@ -39,31 +39,47 @@ class Froshki(object):
     """
 
     default_values = {}
+    ignore_unknown_keys = False
 
     def __new__(klass, *args, **kwargs):
-        attr_names = []
         class_dict = klass.__dict__
-        if '_registered_attrs' not in class_dict:
-            for name in class_dict:
-                obj = class_dict[name]
-                if isinstance(obj, Attribute):
-                    attr_names.append(name)
-                    attr_descriptor = AttributeDescriptor(
-                        name, obj,
-                    )
-                    setattr(klass, name, attr_descriptor)
-            setattr(klass, '_registered_attrs', tuple(attr_names))
+        attr_names = []
+        attr_aliases = {}
+        extra_validators = []
+        for name in class_dict:
+            obj = class_dict[name]
+            if isinstance(obj, Attribute):
+                attr_names.append(name)
+                attr_descriptor = AttributeDescriptor(
+                    name, obj,
+                )
+                setattr(klass, name, attr_descriptor)
+                if obj.key_alias is not None:
+                    attr_aliases[obj.key_alias] = name
+            elif isinstance(obj, ValidatorMethodDescriptor):
+                extra_validators.append(name)
+            elif isinstance(obj, AttributeDescriptor):
+                # Only when modified after declaration.
+                attr_names.append(name)
+                if obj.attr_key_alias is not None:
+                    attr_aliases[obj.attr_key_alias] = name
+        setattr(klass, '_registered_attrs', tuple(attr_names))
+        setattr(klass, '_attr_aliases', attr_aliases)
+        setattr(klass, '_extra_validators', tuple(extra_validators))
         instance = object.__new__(klass)
         return instance
 
-    def __init__(self, source=None, **init_attrs):
+    def __init__(self, source=None, **init_attrs_by_kws):
         self._data = {}
         # Attribute values' overwrites are ordered
         # by asccending assignment-style explicity.
-        self._attrs_default()
+        self._source_attr_defaults()
         if source is not None:
-            self._attrs_from_source(source)
-        self._overwrite_kw_attrs(init_attrs)
+            self._init_attrs(
+                source,
+                ignore_unknown_keys=self.ignore_unknown_keys,
+            )
+        self._init_attrs(init_attrs_by_kws)
         # For Validation.
         self._is_valid = True
         self._yet_to_validate = set(self._registered_attrs)
@@ -73,32 +89,33 @@ class Froshki(object):
     def errors(self):
         return self._errors.copy()
 
-    def _attrs_default(self):
-        self._update_attrs(self.__class__.default_values)
+    @property
+    def data(self):
+        return self._data.copy()
 
-    def _attrs_from_source(self, attr_source):
-        self._update_attrs(attr_source)
+    def _source_attr_defaults(self):
+        self._init_attrs(self.__class__.default_values)
 
-    def _overwrite_kw_attrs(self, init_attrs):
-        self._update_attrs(init_attrs)
-
-    def _update_attrs(self, attr_source):
+    def _init_attrs(self, attr_source, ignore_unknown_keys=False):
         registered_attrs = self._registered_attrs
+        attr_aliases = self._attr_aliases
         for name in attr_source:
-            if name not in registered_attrs:
+            if name in registered_attrs:
+                self._set_attr_data(name, attr_source[name])
+            elif name in attr_aliases:
+                self._set_attr_data(attr_aliases[name], attr_source[name])
+            elif not ignore_unknown_keys:
                 raise TypeError(
                     "'{klass}' has no attirbute {attr}".format(
                         klass=self.__class__.__name__,
                         attr=name,
                     )
                 )
-            else:
-                self._set_attr_data(name, attr_source[name])
 
     def _set_attr_data(self, name, input_value):
         self._data[name] = input_value
 
-    def validate(self, hu=False):
+    def validate(self):
         """
         Validate input/stored values -> boolean.
 
@@ -111,13 +128,18 @@ class Froshki(object):
                 attr_name, attr_is_valid, value_to_store
             )
             is_valid &= attr_is_valid
+        for validator_name in self._extra_validators:
+            is_valid &= self._handle_validation_hook(validator_name)
         self._is_valid = is_valid
         self._yet_to_validate.clear()
         return is_valid
 
     def _validate_attr_data(self, attr_name):
         attr_obj = getattr(self.__class__, attr_name)
-        return attr_obj._validate(self._data[attr_name])
+        attr_data = self._data.get(attr_name, None)
+        if attr_obj.nullable and attr_data is None:
+            return True, attr_data
+        return attr_obj._validate(attr_data)
 
     def _set_attr_validation_data(self, attr_name,
                                   attr_is_valid, value_to_store):
@@ -127,11 +149,26 @@ class Froshki(object):
         else:
             self._errors[attr_name] = value_to_store
 
+    def _handle_validation_hook(self, validator_name):
+        return getattr(self, validator_name)(self)
+
 
 class Attribute(object):
     """
     Base class for Froshki objects' attributes.
     """
+
+    def __init__(self, nullable=False, key_alias=None):
+        self._nullable = nullable
+        self._key_alias = key_alias
+
+    @property
+    def nullable(self):
+        return self._nullable
+
+    @property
+    def key_alias(self):
+        return self._key_alias
 
     @classmethod
     def transform(klass, input_value):
@@ -175,6 +212,10 @@ class AttributeDescriptor(object):
         self._attr_name = attr_name
         self._attr = attr_obj
 
+    @property
+    def attr_key_alias(self):
+        return self._attr.key_alias
+
     def __get__(self, instance, klass):
         if not instance:
             return self._attr
@@ -191,3 +232,36 @@ class AttributeDescriptor(object):
         attr_name = self._attr_name
         froshki._data[attr_name] = input_value
         froshki._yet_to_validate.add(attr_name)
+
+
+class ValidatorMethodDescriptor(object):
+    """
+    Decorates a method to register as an extra/attr-relation validator.
+
+    Hooked validation occurs after per-attribute validations are finished.
+    Example usage:
+    >>> class ModifyPassword(Froshki):
+    ...     user_id = Attribute()
+    ...     old_password = Attribute()
+    ...     new_password = Attribute()
+    ...     confirm_new_password = Attribute()
+    ...     @validation_hook
+    ...     def confirm_password(self):  # Taken as (unbound) function.
+    ...         '''validator_method(<Froshki object>) -> boolean.'''
+    ...         if self.new_password == self.confirm_new_password:
+    ...             return True
+    ...         else:
+    ...             return False
+    >>>
+    >>> modify_password = ModifyPassword(user_id='ymat', old_password='vxf', new_password='f8a73', confirm_new_password='f8a773')
+    >>> modify_password.validate()
+    False
+    """
+
+    def __init__(self, validator_method):
+        self._validator = validator_method
+
+    def __get__(self, instance, klass):
+        return self._validator
+
+validation_hook = ValidatorMethodDescriptor
