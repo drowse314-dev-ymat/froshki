@@ -84,7 +84,7 @@ class Froshki(object):
                 ignore_unknown_keys=self.ignore_unknown_keys,
             )
         self._init_attrs(init_attrs_by_kws)
-        # For Validation.
+        # For validation.
         self._is_valid = True
         self._yet_to_validate = set(self._registered_attrs)
         self._errors = {}
