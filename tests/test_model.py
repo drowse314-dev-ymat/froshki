@@ -43,10 +43,10 @@ class TestAttributeModeling(unittest.TestCase):
         self.assertEqual(
             registration.data,
             {
-             'user_id': 'drowse314',
-             'user_name': 'ymat',
-             'user_age': 24,
-             'password': 'ijk2355',
+                'user_id': 'drowse314',
+                'user_name': 'ymat',
+                'user_age': 24,
+                'password': 'ijk2355',
             }
         )
 
