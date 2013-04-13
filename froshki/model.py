@@ -69,8 +69,12 @@ class Froshki(object):
         instance = object.__new__(klass)
         return instance
 
-    def __init__(self, source=None, **init_attrs_by_kws):
+    def __init__(self, source=None, ignore_unknown_keys=None,
+                 **init_attrs_by_kws):
         self._data = {}
+        # Override class attribute.
+        if ignore_unknown_keys is not None:
+            self.ignore_unknown_keys = ignore_unknown_keys
         # Attribute values' overwrites are ordered
         # by asccending assignment-style explicity.
         self._source_attr_defaults()

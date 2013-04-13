@@ -334,3 +334,11 @@ class TestComplexFunctions(unittest.TestCase):
         Configuration.ignore_unknown_keys = True
         config = Configuration(source=attr_source)
         self.assertTrue(config.validate())
+
+        # Overwrite on instance.
+        with self.assertRaises(TypeError):
+            config = Configuration(
+                source=attr_source,
+                ignore_unknown_keys=False,
+            )
+        self.assertTrue(Configuration.ignore_unknown_keys)
