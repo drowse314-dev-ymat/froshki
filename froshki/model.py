@@ -85,7 +85,6 @@ class Froshki(object):
             )
         self._init_attrs(init_attrs_by_kws)
         # For validation.
-        self._is_valid = True
         self._yet_to_validate = set(self._registered_attrs)
         self._errors = {}
 
@@ -125,7 +124,7 @@ class Froshki(object):
 
         Also store error messages if input is invalid.
         """
-        is_valid = self._is_valid
+        is_valid = True
         for attr_name in self._yet_to_validate:
             attr_is_valid, value_to_store = self._validate_attr_data(attr_name)
             self._set_attr_validation_data(
@@ -134,7 +133,6 @@ class Froshki(object):
             is_valid &= attr_is_valid
         for validator_name in self._extra_validators:
             is_valid &= self._handle_validation_hook(validator_name)
-        self._is_valid = is_valid
         self._yet_to_validate.clear()
         return is_valid
 

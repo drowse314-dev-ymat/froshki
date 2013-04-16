@@ -170,6 +170,8 @@ class TestAttrValidation(unittest.TestCase):
             download.data,
             {'filetype': 'pdf', 'resource_id': '99'}  # Keeps value even in error.
         )
+        download.resource_id = '9'  # Valid data again.
+        self.assertTrue(download.validate())
         # Invalid inputs.
         invalid_dl_request = Download(resource_id='34', filetype='doc')
         self.assertFalse(invalid_dl_request.validate())
