@@ -69,15 +69,15 @@ class TestTrafaretIntegration(unittest.TestCase):
         class EventEntry(Froshki):
             user_id = trafaret_attr(trafaret.Int(gt=0))()
             user_contact = trafaret_attr(trafaret.Email())()
-            team_members = trafaret_attr(
+            members = trafaret_attr(
                 trafaret.String(regex=r'^\d[\d,]*$')
                 >> (lambda m: [int(i) for i in m.string.split(',')])
-            )()
+            )(key_alias='team_members')
             team_name = trafaret_attr(trafaret.String())(nullable=True)
             @validation_hook
             def leader_in_team(self):
                 try:
-                    return self.user_id in self.team_members
+                    return self.user_id in self.members
                 except:
                     return False
 
@@ -90,7 +90,7 @@ class TestTrafaretIntegration(unittest.TestCase):
 
         failure_updates = dict(
             user_id='ymat', user_contact='y@m@a@t@example.com',
-            team_members='314,6341,4418',
+            members='314,6341,4418',
         )
         for failure_key in failure_updates:
             event_entry = EventEntry(
