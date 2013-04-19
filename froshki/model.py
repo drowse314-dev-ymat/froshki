@@ -56,7 +56,7 @@ class Froshki(object):
                 setattr(klass, name, attr_descriptor)
                 if obj.key_alias is not None:
                     attr_aliases[obj.key_alias] = name
-            elif isinstance(obj, ValidatorMethodDescriptor):
+            elif isinstance(obj, ValidatorMethod):
                 extra_validators.append(name)
             elif isinstance(obj, AttributeDescriptor):
                 # Only when modified after declaration.
@@ -152,7 +152,9 @@ class Froshki(object):
             self._errors[attr_name] = value_to_store
 
     def _handle_validation_hook(self, validator_name):
-        return getattr(self, validator_name)(self)
+        return getattr(self, validator_name).validate(
+            validator_name, self
+        )
 
 
 class Attribute(object):
@@ -236,7 +238,7 @@ class AttributeDescriptor(object):
         froshki._yet_to_validate.add(attr_name)
 
 
-class ValidatorMethodDescriptor(object):
+class ValidatorMethod(object):
     """
     Decorates a method to register as an extra/attr-relation validator.
 
@@ -260,10 +262,24 @@ class ValidatorMethodDescriptor(object):
     False
     """
 
-    def __init__(self, validator_method):
+    def __init__(self, validator_method, error=None):
         self._validator = validator_method
+        self._error = error
 
-    def __get__(self, instance, klass):
-        return self._validator
+    def validate(self, attr_name, froshki):
+        froshki._errors.pop(attr_name, None)
+        is_valid = self._validator(froshki)
+        if not is_valid and self._error is not None:
+            froshki._errors[attr_name] = self._error
+        return is_valid
 
-validation_hook = ValidatorMethodDescriptor
+    @classmethod
+    def extend(klass, error=None):
+        def _validation_hook(validator_method):
+            return klass(
+                validator_method,
+                error=error,
+            )
+        return _validation_hook
+
+validation_hook = ValidatorMethod

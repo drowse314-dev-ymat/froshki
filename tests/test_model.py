@@ -317,6 +317,34 @@ class TestComplexFunctions(unittest.TestCase):
         modify_password.confirm_new_password = 'fffff'
         self.assertFalse(modify_password.validate())
 
+    def test_extended_validation_hooks(self):
+
+        class CreateEvent(Froshki):
+            event_name = Attribute()
+            event_start = Attribute()
+            event_end = Attribute()
+            @validation_hook.extend(error='event must start before the end')
+            def check_event_duration(self):
+                if self.event_start < self.event_end:
+                    return True
+                else:
+                    return False
+
+        import datetime
+        create_event = CreateEvent(
+            event_name='Hack your forms',
+            event_start=datetime.time(hour=17, minute=30),
+            event_end=datetime.time(hour=20, minute=0),
+        )
+        self.assertTrue(create_event.validate())
+
+        create_event.event_end = datetime.time(hour=16, minute=0)
+        self.assertFalse(create_event.validate())
+        self.assertEqual(
+            create_event.errors,
+            dict(check_event_duration='event must start before the end')
+        )
+
     def test_ignore_unknown_keys(self):
 
         class Configuration(Froshki):
