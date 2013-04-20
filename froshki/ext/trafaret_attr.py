@@ -1,5 +1,16 @@
 # encoding: utf-8
 
+"""
+    froshki.ext.trafaret_attr
+    ~~~~~~~~~~~~~~~~~~~~~~~~~
+
+    Implements froshki.Attribute extension with
+    trafaret<https://github.com/Deepwalker/trafaret> data validation library.
+
+    :copyright: (c) 2013 by ymat<drowse314@gmail.com>.
+    :license: BSD, see LICENSE for more details.
+"""
+
 try:
     import trafaret
 except ImportError:

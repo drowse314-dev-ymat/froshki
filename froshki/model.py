@@ -1,5 +1,15 @@
 # encoding: utf-8
 
+"""
+    froshki.model
+    ~~~~~~~~~~~~~
+
+    Implements model bases for froshki functionalities.
+
+    :copyright: (c) 2013 by ymat<drowse314@gmail.com>.
+    :license: BSD, see LICENSE for more details.
+"""
+
 
 class Froshki(object):
     """
