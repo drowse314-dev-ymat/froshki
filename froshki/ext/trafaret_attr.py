@@ -4,12 +4,12 @@ try:
     import trafaret
 except ImportError:
     raise ImportError('trafaret is not installed')
-from froshki.model import Attribute
+from froshki import Attribute
 
 
 class TrafaretPoweredAttribute(Attribute):
     """
-    froshki.model.Attribute subclass using trafaret validation
+    froshki.Attribute subclass using trafaret validation
     system.
 
     classmethod validate(klass, input_value) is used for handling

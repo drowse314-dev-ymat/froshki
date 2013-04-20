@@ -1,8 +1,7 @@
 # encoding: utf-8
 
 import unittest
-from froshki import Froshki, validation_hook
-from froshki.model import Attribute
+from froshki import Froshki, validation_hook, Attribute
 
 
 class TestAttributeModeling(unittest.TestCase):
