@@ -17,6 +17,17 @@ Primitive demo::
 
     >>> from froshki import Froshki, Attribute
     >>>
+    >>> class ResourceId(Attribute):
+    ...     @classmethod
+    ...     def transform(klass, input_value):
+    ...         return int(input_value)
+    ...     @classmethod
+    ...     def validate(klass, input_value):
+    ...         if input_value in (1,5,7,9):
+    ...             return True, input_value
+    ...         else:
+    ...             return False, 'resource id not found'
+    >>>
     >>> class Filetype(Attribute):
     ...     @classmethod
     ...     def transform(klass, input_value):
