@@ -3,7 +3,8 @@ Froshki
 
 Froshki is a simple and poor object data mapper library.
 
-Looking quite similar to `WTForms<http://wtforms.simplecodes.com/>`_,
+Looking quite similar to `WTForms
+<http://wtforms.simplecodes.com/>`_,
 rather intended to focus on data input/output abstraction,
 separating validation or conversion functions as APIs & extensions.
 
@@ -39,17 +40,18 @@ Primitive demo::
     >>> download.filetype
     'pdf'
  
-To use any functions of Froshki, extend `froshki.Froshki` to define data model schema.
-Attributes are represented by attaching `froshki.Attribute` subclasses onto the model.
+To use any functions of Froshki, extend ``froshki.Froshki`` to define data model schema.
+Attributes are represented by attaching ``froshki.Attribute`` subclasses onto the model.
 
-You can add any data conversion (`Attribute.transform`) or validation (`Attribute.validate`) methods for attributes.
-`Froshki.validate` converts and validates all attributes as defined.
+You can add any data conversion (``Attribute.transform``) or validation (``Attribute.validate``) methods for attributes.
+``Froshki.validate`` converts and validates all attributes as defined.
 But it's a bit bothersome, and you can use a built-in extension supporting attribute definition.
 
 Using trafaret extension
 ------------------------
 
-You need to pre-install `trafaret<https://github.com/Deepwalker/trafaret>`_ to use the extension.
+You need to pre-install `trafaret
+<https://github.com/Deepwalker/trafaret>`_ to use the extension.
 Usage::
 
     >>> from froshki import Froshki
@@ -79,7 +81,7 @@ Some utility properties are available for accessing validated data::
     >>> send_inquiry.errors  # error messages are registered if validation failed
     {}
 
-Further, you can initialize `froshki.Froshki` with mappings::
+Further, you can initialize ``froshki.Froshki`` with mappings::
 
     (...)
     >>> data = {'user_name': 'ymat', 'user_contact': 'drowse314.gmail.com', 'message': 'cannot post messages to my group'}
@@ -103,7 +105,7 @@ You can use the names differring from the class attribute names for sourcing att
 Extra validation
 ................
 
-You can add attribute dependent extra validator methods for attribute relations etc., using `validation_hook` descriptor::
+You can add attribute dependent extra validator methods for attribute relations etc., using ``validation_hook`` descriptor::
 
     >>> from froshki import Froshki, Attribute, validation_hook
     >>>
@@ -137,11 +139,11 @@ If you need error information with these extra validators, extend the decorator 
 Other options
 .............
 
-`froshki.Froshki` class has some useful options.
+``froshki.Froshki`` class has some useful options.
 
-* `Froshki.default_values`: provide attribute defaults as dict.
-* `Froshki.ignore_unkown_keys`: control if `source` argument accepts names that are not defined as attributes, or not (True/False).
+* ``Froshki.default_values``: provide attribute defaults as dict.
+* ``Froshki.ignore_unkown_keys``: control if ``source`` argument accepts names that are not defined as attributes, or not (True/False).
 
-Also some options for `froshki.Attribute`.
+Also some options for ``froshki.Attribute``.
 
-* (As argument) `Attribute(nullable=<bool>)`: allows `None` in validation (with any validation methods set).
+* (As argument) ``Attribute(nullable=<bool>)``: allows ``None`` in validation (with any validation methods set).
