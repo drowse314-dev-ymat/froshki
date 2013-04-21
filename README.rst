@@ -10,6 +10,15 @@ separating validation or conversion functions as APIs & extensions.
 
 Instead of integrating with web forms etc., designed to achieve more flexible attribute sourcing.
 
+Features
+........
+
+* Define data schema as class definition.
+* Supply data inputs by keyword arguments, dict, or both.
+* Convert and validate data inputs with user defined methods or built-in integration with 3rd party libraries.
+* Access validated data as attributes / mapping.
+* Easy to hook your functions on validation.
+
 Simple usage
 ------------
 
@@ -108,7 +117,7 @@ You can use the names differring from the class attribute names for sourcing att
     >>> class ResourceAccess(Froshki):
     ...     resource_id = Attribute()
     ...     user_id = Attribute()
-    ...     resource_key = ResouceKey(key_alias='password')
+    ...     resource_key = Attribute(key_alias='password')
     >>> access = ResourceAccess(resource_id='1276', user_id='ymat', password='VXFPF93')
     >>> access.resource_key
     'VXFPF93'
@@ -116,7 +125,7 @@ You can use the names differring from the class attribute names for sourcing att
 Extra validation
 ................
 
-You can add attribute dependent extra validator methods for attribute relations etc., using ``validation_hook`` descriptor::
+You can add attribute dependent extra validator methods for attribute relations etc., using ``validation_hook`` decorator::
 
     >>> from froshki import Froshki, Attribute, validation_hook
     >>>
