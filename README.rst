@@ -137,7 +137,7 @@ If you need error information with these extra validators, extend the decorator 
 
     (...)
     >>> class SendInquiryExt(SendInquiry):
-    ...     @validation_hook.extend(error='event must start before the end')
+    ...     @validation_hook.extend(error='inconsistent email inputs')
     ...     def confirm_email(self):
     ...         return self.user_contact == self.user_contact_confirmation
     >>>
@@ -145,7 +145,7 @@ If you need error information with these extra validators, extend the decorator 
     >>> send_inquiry.validate()
     False
     >>> send_inquiry.errors
-    {'confirm_email': 'event must start before the end'}
+    {'confirm_email': 'inconsistent email inputs'}
 
 Other options
 .............
