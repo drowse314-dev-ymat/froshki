@@ -20,6 +20,16 @@ setup_config = dict(
     platforms=["any"],
 
     packages=['froshki', 'froshki.ext'],
+    classifiers=[
+        'Development Status :: 3 - Alpha',
+        'Intended Audience :: Developers',
+        'License :: OSI Approved :: BSD License',
+        'Operating System :: OS Independent',
+        'Programming Language :: Python :: 2.7',
+        'Programming Language :: Python :: 3',
+        'Topic :: Software Development :: Libraries',
+        'Topic :: Utilities',
+    ],
 
 )
 
