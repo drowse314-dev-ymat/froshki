@@ -147,7 +147,9 @@ class Froshki(object):
         Also store error messages if input is invalid.
         """
         is_valid = True
-        for attr_name in self._yet_to_validate:
+        yet_to_validate = self._yet_to_validate
+        yet_to_validate.update(set(self.errors))
+        for attr_name in yet_to_validate:
             attr_is_valid, value_to_store = self._validate_attr_data(attr_name)
             self._set_attr_validation_data(
                 attr_name, attr_is_valid, value_to_store

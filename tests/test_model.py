@@ -157,10 +157,12 @@ class TestAttrValidation(unittest.TestCase):
         # Valid inputs.
         download = Download(resource_id='9', filetype='pdf')
         self.assertTrue(download.validate())
+        self.assertTrue(download.validate())  # Consistent validation.
         self.assertEqual(download.resource_id, 9)
         self.assertEqual(download.filetype, 'pdf')
         download.resource_id = '99'  # Invalidate by assignment.
         self.assertFalse(download.validate())
+        self.assertFalse(download.validate())  # Consistent validation.
         self.assertEqual(
             download.errors,
             {'resource_id': 'resource id not found'}
@@ -171,9 +173,11 @@ class TestAttrValidation(unittest.TestCase):
         )
         download.resource_id = '9'  # Valid data again.
         self.assertTrue(download.validate())
+        self.assertTrue(download.validate())  # Consistent validation.
         # Invalid inputs.
         invalid_dl_request = Download(resource_id='34', filetype='doc')
         self.assertFalse(invalid_dl_request.validate())
+        self.assertFalse(invalid_dl_request.validate())  # Consistent validation.
         self.assertEqual(
             invalid_dl_request.errors,
             {'resource_id': 'resource id not found',
