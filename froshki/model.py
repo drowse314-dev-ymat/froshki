@@ -114,9 +114,15 @@ class Froshki(object):
         attr_aliases = self._attr_aliases
         for name in attr_source:
             if name in registered_attrs:
-                self._set_attr_data(name, attr_source[name])
+                self._set_attr_data(
+                    name, attr_source[name],
+                    mark_as_unvalidated=False,
+                )
             elif name in attr_aliases:
-                self._set_attr_data(attr_aliases[name], attr_source[name])
+                self._set_attr_data(
+                    attr_aliases[name], attr_source[name],
+                    mark_as_unvalidated=False,
+                )
             elif not ignore_unknown_keys:
                 raise TypeError(
                     "'{klass}' has no attirbute {attr}".format(
@@ -125,8 +131,14 @@ class Froshki(object):
                     )
                 )
 
-    def _set_attr_data(self, name, input_value):
+    def _set_attr_data(self, name, input_value,
+                       mark_as_unvalidated=True):
         self._data[name] = input_value
+        if mark_as_unvalidated:
+            self._yet_to_validate.add(name)
+
+    def _get_attr_data(self, name):
+        return self._data.get(name, None)
 
     def validate(self):
         """
@@ -162,9 +174,14 @@ class Froshki(object):
             self._errors[attr_name] = value_to_store
 
     def _handle_validation_hook(self, validator_name):
-        return getattr(self, validator_name).validate(
+        self._errors.pop(validator_name, None)
+        validator = getattr(self, validator_name)
+        is_valid = validator.validate(
             validator_name, self
         )
+        if not is_valid and validator.error is not None:
+            self._errors[validator_name] = validator.error
+        return is_valid
 
 
 class Attribute(object):
@@ -234,7 +251,7 @@ class AttributeDescriptor(object):
         if not instance:
             return self._attr
         else:
-            return instance._data.get(self._attr_name, None)
+            return instance._get_attr_data(self._attr_name)
 
     def __set__(self, instance, value):
         if not instance:
@@ -244,8 +261,7 @@ class AttributeDescriptor(object):
 
     def _set_data(self, froshki, input_value):
         attr_name = self._attr_name
-        froshki._data[attr_name] = input_value
-        froshki._yet_to_validate.add(attr_name)
+        froshki._set_attr_data(attr_name, input_value)
 
 
 class ValidatorMethod(object):
@@ -276,12 +292,12 @@ class ValidatorMethod(object):
         self._validator = validator_method
         self._error = error
 
+    @property
+    def error(self):
+        return self._error
+
     def validate(self, attr_name, froshki):
-        froshki._errors.pop(attr_name, None)
-        is_valid = self._validator(froshki)
-        if not is_valid and self._error is not None:
-            froshki._errors[attr_name] = self._error
-        return is_valid
+        return self._validator(froshki)
 
     @classmethod
     def extend(klass, error=None):
