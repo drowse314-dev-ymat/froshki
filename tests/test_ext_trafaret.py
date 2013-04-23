@@ -57,10 +57,12 @@ class TestTrafaretIntegration(unittest.TestCase):
             order_date='2013/04/5', delivary_date='2012/05/01',
         )
         for failure_key in failure_updates:
+            attr_failure = attr_source.copy()
+            attr_failure.update(
+                {failure_key: failure_updates[failure_key]}
+            )
             order_submit = OrderSubmit(
-                source=attr_source.copy().update(
-                    dict(failure_key=failure_updates[failure_key])
-                )
+                source=attr_failure
             )
             self.assertFalse(order_submit.validate())
 
@@ -90,13 +92,15 @@ class TestTrafaretIntegration(unittest.TestCase):
 
         failure_updates = dict(
             user_id='ymat', user_contact='y@m@a@t@example.com',
-            members='314,6341,4418',
+            team_members='314,6341,4418,ku',
         )
         for failure_key in failure_updates:
+            attr_failure = attr_source.copy()
+            attr_failure.update(
+                {failure_key: failure_updates[failure_key]}
+            )
             event_entry = EventEntry(
-                source=attr_source.copy().update(
-                    dict(failure_key=failure_updates[failure_key])
-                )
+                source=attr_failure
             )
             self.assertFalse(event_entry.validate())
 
