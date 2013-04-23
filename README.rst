@@ -87,6 +87,15 @@ Usage::
     >>> send_inquiry.validate()
     True
 
+If you prefer other validation libraries,
+you will find it so easy to extend ``froshki.Attribute.validate``.
+Or some more libraries are built-in supported:
+
+* `voluptuous
+<https://github.com/alecthomas/voluptuous>`_
+
+See ``froshki/ext/*_attr.py`` for documentation or details of extension wrinting.
+
 Other features
 --------------
 
