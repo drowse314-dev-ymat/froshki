@@ -56,6 +56,14 @@ class Froshki(object):
         attr_names = []
         attr_aliases = {}
         extra_validators = []
+        for base in klass.mro()[1:]:
+            base_dict = base.__dict__
+            for name in base_dict:
+                obj = base_dict[name]
+                if isinstance(obj, AttributeDescriptor):
+                    attr_names.append(name)
+                    if obj.attr_key_alias is not None:
+                        attr_aliases[obj.attr_key_alias] = name
         for name in class_dict:
             obj = class_dict[name]
             if isinstance(obj, Attribute):
