@@ -257,7 +257,7 @@ class AttributeDescriptor(object):
 
     def __set__(self, instance, value):
         if not instance:
-            return object.__set__(self, instance, value)
+            pass
         else:
             self._set_data(instance, value)
 

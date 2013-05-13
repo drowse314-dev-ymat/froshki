@@ -3,6 +3,12 @@
 import unittest
 from froshki import Froshki, validation_hook, Attribute
 
+try:
+    import clr
+    is_ipy = True
+except ImportError:
+    is_ipy = False
+
 
 class TestAttributeModeling(unittest.TestCase):
 
@@ -280,6 +286,8 @@ class TestComplexFunctions(unittest.TestCase):
         self.assertEqual(search.search_key, 'japanese furoshiki')
         self.assertEqual(search.search_type, 'image')
         # Redefine attribute.
+        if is_ipy:
+            del Search.search_type
         Search.search_type = Attribute()
         with self.assertRaises(TypeError):
             search = Search(type='movie')
