@@ -11,6 +11,86 @@
 """
 
 
+class Attribute(object):
+    """
+    Base class for Froshki objects' attributes.
+    """
+
+    def __init__(self, nullable=False, key_alias=None):
+        self._nullable = nullable
+        self._key_alias = key_alias
+
+    @property
+    def nullable(self):
+        return self._nullable
+
+    @property
+    def key_alias(self):
+        return self._key_alias
+
+    @classmethod
+    def transform(klass, input_value):
+        """
+        Transform input values to store into Froshki._data.
+
+        klass.transform(input_value) -> value_to_store
+        Override this method for customization.
+        """
+        return input_value
+
+    @classmethod
+    def validate(klass, input_value):
+        """
+        Validate input values to store into Froshki._data.
+
+        klass.validate(input_value)
+            -> True, input_value
+        or
+            -> False, error_message
+        Override this method for customization.
+        """
+        return True, input_value
+
+    @classmethod
+    def _validate(klass, input_value):
+        """Validation hook for Froshki object."""
+        try:
+            value_to_store = klass.transform(input_value)
+        except:
+            return False, 'data conversion error: {}'.format(input_value)
+        return klass.validate(value_to_store)
+
+
+class AttributeDescriptor(object):
+    """
+    Abstracts attribute access to Froshki objects.
+    """
+
+    def __init__(self, attr_name, attr_obj):
+        self._attr_name = attr_name
+        self._attr = attr_obj
+
+    @property
+    def attr_key_alias(self):
+        return self._attr.key_alias
+
+    def __get__(self, instance, klass):
+        if not instance:
+            return self._attr
+        else:
+            return instance._get_attr_data(self._attr_name)
+
+    def __set__(self, instance, value):
+        if not instance:
+            pass
+        else:
+            self._set_data(instance, value)
+
+    def _set_data(self, froshki, input_value):
+        attr_name = self._attr_name
+        froshki._set_attr_data(attr_name, input_value)
+
+
 class Froshki(object):
     """
     Base class for Froshki objetcs.
@@ -51,41 +131,72 @@ class Froshki(object):
     default_values = {}
     ignore_unknown_keys = False
 
+    _attribute_class = Attribute
+    _descriptor_class = AttributeDescriptor
+
     def __new__(klass, *args, **kwargs):
-        class_dict = klass.__dict__
+
+        attr_names, attr_aliases = klass.find_attributes()
+        inherited_attrs, inherited_aliases = klass.find_attributes_in_bases()
+        attr_names.extend(inherited_attrs)
+        attr_aliases.update(inherited_aliases)
+        setattr(klass, '_registered_attrs', tuple(attr_names))
+        setattr(klass, '_attr_aliases', attr_aliases)
+
+        extra_validators = klass.find_extra_validators()
+        setattr(klass, '_extra_validators', tuple(extra_validators))
+
+        instance = object.__new__(klass)
+        return instance
+
+    @classmethod
+    def find_attributes(klass):
         attr_names = []
         attr_aliases = {}
-        extra_validators = []
-        for base in klass.mro()[1:]:
-            base_dict = base.__dict__
-            for name in base_dict:
-                obj = base_dict[name]
-                if isinstance(obj, AttributeDescriptor):
-                    attr_names.append(name)
-                    if obj.attr_key_alias is not None:
-                        attr_aliases[obj.attr_key_alias] = name
+        class_dict = klass.__dict__
+        attribute_class = klass._attribute_class
+        descriptor_class = klass._descriptor_class
         for name in class_dict:
             obj = class_dict[name]
-            if isinstance(obj, Attribute):
+            if isinstance(obj, attribute_class):
                 attr_names.append(name)
-                attr_descriptor = AttributeDescriptor(
+                attr_descriptor = descriptor_class(
                     name, obj,
                 )
                 setattr(klass, name, attr_descriptor)
                 if obj.key_alias is not None:
                     attr_aliases[obj.key_alias] = name
-            elif isinstance(obj, ValidatorMethod):
-                extra_validators.append(name)
-            elif isinstance(obj, AttributeDescriptor):
+            elif isinstance(obj, descriptor_class):
                 # Only when modified after declaration.
                 attr_names.append(name)
                 if obj.attr_key_alias is not None:
                     attr_aliases[obj.attr_key_alias] = name
-        setattr(klass, '_registered_attrs', tuple(attr_names))
-        setattr(klass, '_attr_aliases', attr_aliases)
-        setattr(klass, '_extra_validators', tuple(extra_validators))
-        instance = object.__new__(klass)
-        return instance
+        return attr_names, attr_aliases
+
+    @classmethod
+    def find_attributes_in_bases(klass):
+        attr_names = []
+        attr_aliases = {}
+        descriptor_class = klass._descriptor_class
+        for base in klass.mro()[1:]:
+            base_dict = base.__dict__
+            for name in base_dict:
+                obj = base_dict[name]
+                if isinstance(obj, descriptor_class):
+                    attr_names.append(name)
+                    if obj.attr_key_alias is not None:
+                        attr_aliases[obj.attr_key_alias] = name
+        return attr_names, attr_aliases
+
+    @classmethod
+    def find_extra_validators(klass):
+        class_dict = klass.__dict__
+        extra_validators = []
+        for name in class_dict:
+            obj = class_dict[name]
+            if isinstance(obj, ValidatorMethod):
+                extra_validators.append(name)
+        return extra_validators
 
     def __init__(self, source=None, ignore_unknown_keys=None,
                  **init_attrs_by_kws):
@@ -192,86 +303,6 @@ class Froshki(object):
         if not is_valid and validator.error is not None:
             self._errors[validator_name] = validator.error
         return is_valid
-
-
-class Attribute(object):
-    """
-    Base class for Froshki objects' attributes.
-    """
-
-    def __init__(self, nullable=False, key_alias=None):
-        self._nullable = nullable
-        self._key_alias = key_alias
-
-    @property
-    def nullable(self):
-        return self._nullable
-
-    @property
-    def key_alias(self):
-        return self._key_alias
-
-    @classmethod
-    def transform(klass, input_value):
-        """
-        Transform input values to store into Froshki._data.
-
-        klass.transform(input_value) -> value_to_store
-        Override this method for customization.
-        """
-        return input_value
-
-    @classmethod
-    def validate(klass, input_value):
-        """
-        Validate input values to store into Froshki._data.
-
-        klass.validate(input_value)
-            -> True, input_value
-        or
-            -> False, error_message
-        Override this method for customization.
-        """
-        return True, input_value
-
-    @classmethod
-    def _validate(klass, input_value):
-        """Validation hook for Froshki object."""
-        try:
-            value_to_store = klass.transform(input_value)
-        except:
-            return False, 'data conversion error: {}'.format(input_value)
-        return klass.validate(value_to_store)
-
-
-class AttributeDescriptor(object):
-    """
-    Abstracts attribute access to Froshki objects.
-    """
-
-    def __init__(self, attr_name, attr_obj):
-        self._attr_name = attr_name
-        self._attr = attr_obj
-
-    @property
-    def attr_key_alias(self):
-        return self._attr.key_alias
-
-    def __get__(self, instance, klass):
-        if not instance:
-            return self._attr
-        else:
-            return instance._get_attr_data(self._attr_name)
-
-    def __set__(self, instance, value):
-        if not instance:
-            pass
-        else:
-            self._set_data(instance, value)
-
-    def _set_data(self, froshki, input_value):
-        attr_name = self._attr_name
-        froshki._set_attr_data(attr_name, input_value)
 
 
 class ValidatorMethod(object):
