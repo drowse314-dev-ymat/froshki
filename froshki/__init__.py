@@ -13,4 +13,4 @@
 
 from .model import Froshki, validation_hook, Attribute
 
-__version__ = '0.3'
+__version__ = '0.4'
