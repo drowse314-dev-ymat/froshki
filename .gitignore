@@ -1,6 +1,7 @@
 # Python
 *.pyc
 /dist
+/build
 /froshki.egg-info
 # venv
 /venv/*
