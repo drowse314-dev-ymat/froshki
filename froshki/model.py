@@ -91,6 +91,53 @@ class AttributeDescriptor(object):
         froshki._set_attr_data(attr_name, input_value)
 
 
+class ValidatorMethod(object):
+    """
+    Decorates a method to register as an extra/attr-relation validator.
+
+    Hooked validation occurs after per-attribute validations are finished.
+    Example usage:
+    >>> class ModifyPassword(Froshki):
+    ...     user_id = Attribute()
+    ...     old_password = Attribute()
+    ...     new_password = Attribute()
+    ...     confirm_new_password = Attribute()
+    ...     @validation_hook
+    ...     def confirm_password(self):  # Taken as (unbound) function.
+    ...         '''validator_method(<Froshki object>) -> boolean.'''
+    ...         if self.new_password == self.confirm_new_password:
+    ...             return True
+    ...         else:
+    ...             return False
+    >>>
+    >>> modify_password = ModifyPassword(user_id='ymat', old_password='vxf', new_password='f8a73', confirm_new_password='f8a773')
+    >>> modify_password.validate()
+    False
+    """
+
+    def __init__(self, validator_method, error=None):
+        self._validator = validator_method
+        self._error = error
+
+    @property
+    def error(self):
+        return self._error
+
+    def validate(self, attr_name, froshki):
+        return self._validator(froshki)
+
+    @classmethod
+    def extend(klass, error=None):
+        def _validation_hook(validator_method):
+            return klass(
+                validator_method,
+                error=error,
+            )
+        return _validation_hook
+
+validation_hook = ValidatorMethod
+
+
 class Froshki(object):
     """
     Base class for Froshki objetcs.
@@ -303,50 +350,3 @@ class Froshki(object):
         if not is_valid and validator.error is not None:
             self._errors[validator_name] = validator.error
         return is_valid
-
-
-class ValidatorMethod(object):
-    """
-    Decorates a method to register as an extra/attr-relation validator.
-
-    Hooked validation occurs after per-attribute validations are finished.
-    Example usage:
-    >>> class ModifyPassword(Froshki):
-    ...     user_id = Attribute()
-    ...     old_password = Attribute()
-    ...     new_password = Attribute()
-    ...     confirm_new_password = Attribute()
-    ...     @validation_hook
-    ...     def confirm_password(self):  # Taken as (unbound) function.
-    ...         '''validator_method(<Froshki object>) -> boolean.'''
-    ...         if self.new_password == self.confirm_new_password:
-    ...             return True
-    ...         else:
-    ...             return False
-    >>>
-    >>> modify_password = ModifyPassword(user_id='ymat', old_password='vxf', new_password='f8a73', confirm_new_password='f8a773')
-    >>> modify_password.validate()
-    False
-    """
-
-    def __init__(self, validator_method, error=None):
-        self._validator = validator_method
-        self._error = error
-
-    @property
-    def error(self):
-        return self._error
-
-    def validate(self, attr_name, froshki):
-        return self._validator(froshki)
-
-    @classmethod
-    def extend(klass, error=None):
-        def _validation_hook(validator_method):
-            return klass(
-                validator_method,
-                error=error,
-            )
-        return _validation_hook
-
-validation_hook = ValidatorMethod
