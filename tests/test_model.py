@@ -164,6 +164,29 @@ class TestAttributeModeling(unittest.TestCase):
         self.assertEqual(like_switch.date_liked, '2013/05/13')
         self.assertEqual(like_switch.like_on, True)
 
+    def test_model_as_base_class(self):
+
+        # ! Never instantiate before subclassing !
+        class Like(Froshki):
+            uri = Attribute()
+            user = Attribute()
+            date_liked = Attribute()
+
+        class LikeSwitch(Like):
+            like_on = Attribute()
+
+        like_switch = LikeSwitch(
+            uri='http://github.com',
+            user='ymat',
+            date_liked='2013/05/13',
+            like_on=True,
+        )
+        self.assertTrue(like_switch.validate())
+        self.assertEqual(like_switch.uri, 'http://github.com')
+        self.assertEqual(like_switch.user, 'ymat')
+        self.assertEqual(like_switch.date_liked, '2013/05/13')
+        self.assertEqual(like_switch.like_on, True)
+
 
 class TestAttrValidation(unittest.TestCase):
 

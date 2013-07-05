@@ -10,6 +10,8 @@
     :license: BSD, see LICENSE for more details.
 """
 
+from .meta import with_metaclass, Prebuilt
+
 
 class Attribute(object):
     """
@@ -138,7 +140,7 @@ class ValidatorMethod(object):
 validation_hook = ValidatorMethod
 
 
-class Froshki(object):
+class Froshki(with_metaclass(Prebuilt)):
     """
     Base class for Froshki objetcs.
 
@@ -229,6 +231,8 @@ class Froshki(object):
             base_dict = base.__dict__
             for name in base_dict:
                 obj = base_dict[name]
+                # Any `attribute_class` instances on bases can be assumed as already wrapped up
+                # with `descriptor_class`, thanks to the `Prebuilt` metaclass.
                 if isinstance(obj, descriptor_class):
                     attr_names.append(name)
                     if obj.attr_key_alias is not None:
