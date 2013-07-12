@@ -10,7 +10,7 @@
     :license: BSD, see LICENSE for more details.
 """
 
-from .meta import with_metaclass, Prebuilt
+from froshki.meta import with_metaclass, Prebuilt
 
 
 class Attribute(object):
