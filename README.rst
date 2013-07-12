@@ -164,6 +164,43 @@ If you need error information with these extra validators, extend the decorator 
     >>> send_inquiry.errors
     {'confirm_email': 'inconsistent email inputs'}
 
+Subclassing and attribute mixin
+...............................
+
+``froshki.Froshki`` subclasses are usable as base classes::
+
+    (...)
+    >>> class Resource(Froshki):
+    ...     resource_id = ResourceId()
+    >>>
+    >>> class Download(Resource):
+    ...     filetype = Filetype()
+    >>>
+    >>> download = Download(resource_id='9', filetype='pdf')
+    >>> download.validate()
+    True
+
+Mixins are useful if you want to share some attribute definitions between schemas::
+
+    (...)
+    >>> class UserMixin(object):
+    ...     user = Attribute()
+    >>>
+    >>> class DownloadAsUser(Download, UserMixin):
+    ...     pass
+    >>>
+    >>> download_as_someone = DownloadAsUser(
+    ...     resource_id='5', filetype='mobi',
+    ...     user='ymat',
+    ... )
+    >>> download_as_someone.validate()
+    True
+    >>> download_as_someone.user
+    'ymat'
+
+You can use any classes as attribute mixins by attaching ``froshki.Attribute`` instances,
+with the exception of ``froshki.Froshki`` subclass which causes MRO issue.
+
 Other options
 .............
 

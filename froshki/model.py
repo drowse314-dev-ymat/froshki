@@ -175,6 +175,21 @@ class Froshki(with_metaclass(Prebuilt)):
     9
     >>> download.filetype
     'pdf'
+    >>>
+    >>> # Attribute mixin.
+    >>> class UserMixin(object):
+    ...     user = Attribute()
+    >>> class DownloadAsUser(Download, UserMixin):
+    ...     pass
+    >>>
+    >>> download_as_someone = DownloadAsUser(
+    ...     resource_id='5', filetype='mobi',
+    ...     user='ymat',
+    ... )
+    >>> download_as_someone.validate()
+    True
+    >>> download_as_someone.user
+    'ymat'
     """
 
     default_values = {}
@@ -226,6 +241,7 @@ class Froshki(with_metaclass(Prebuilt)):
     def find_attributes_in_bases(klass):
         attr_names = []
         attr_aliases = {}
+        attribute_class = klass._attribute_class
         descriptor_class = klass._descriptor_class
         for base in klass.mro()[1:]:
             base_dict = base.__dict__
@@ -237,6 +253,17 @@ class Froshki(with_metaclass(Prebuilt)):
                     attr_names.append(name)
                     if obj.attr_key_alias is not None:
                         attr_aliases[obj.attr_key_alias] = name
+                # Also capture `attribute_class` instances for attribute mixins, which are
+                # not subclasses of `Froshki`.
+                elif isinstance(obj, attribute_class):
+                    attr_names.append(name)
+                    attr_descriptor = descriptor_class(
+                        name, obj,
+                    )
+                    # No modifications to the base class.
+                    setattr(klass, name, attr_descriptor)
+                    if obj.key_alias is not None:
+                        attr_aliases[obj.key_alias] = name
         return attr_names, attr_aliases
 
     @classmethod

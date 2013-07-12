@@ -187,6 +187,28 @@ class TestAttributeModeling(unittest.TestCase):
         self.assertEqual(like_switch.date_liked, '2013/05/13')
         self.assertEqual(like_switch.like_on, True)
 
+    def test_attribute_mixin(self):
+
+        class Switch(object):
+            on = Attribute()
+
+        class LikeSwitch(Froshki, Switch):
+            uri = Attribute()
+            user = Attribute()
+            date_liked = Attribute()
+
+        like_switch = LikeSwitch(
+            uri='http://github.com',
+            user='ymat',
+            date_liked='2013/05/13',
+            on=True,
+        )
+        self.assertTrue(like_switch.validate())
+        self.assertEqual(like_switch.uri, 'http://github.com')
+        self.assertEqual(like_switch.user, 'ymat')
+        self.assertEqual(like_switch.date_liked, '2013/05/13')
+        self.assertEqual(like_switch.on, True)
+
 
 class TestAttrValidation(unittest.TestCase):
 
