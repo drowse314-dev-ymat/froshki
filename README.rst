@@ -83,7 +83,10 @@ Usage::
     ...     user_contact = trafaret_attr(trafaret.Email())()
     ...     message = trafaret_attr(trafaret.String(regex=r'\w{10,400}'))()
     >>>
-    >>> send_inquiry = SendInquiry(user_name='yu mat', user_contact='drowse314@gmail.com', message='cannot post messages to my group')
+    >>> send_inquiry = SendInquiry(
+    ...     user_name='yu mat', user_contact='drowse314@gmail.com',
+    ...     message='cannot post messages to my group'
+    ... )
     >>> send_inquiry.validate()
     True
 
@@ -146,7 +149,10 @@ You can add attribute dependent extra validator methods for attribute relations 
     ...     def confirm_email(self):
     ...         return self.user_contact == self.user_contact_confirmation
     >>>
-    >>> send_inquiry = SendInquiry(user_name='yu mat', user_contact='drowse314@gmail.com', user_contact_confirmation='drose@gmail.com', message='cannot post messages to my group')
+    >>> send_inquiry = SendInquiry(
+    ...     user_name='yu mat', user_contact='drowse314@gmail.com', user_contact_confirmation='drose@gmail.com',
+    ...     message='cannot post messages to my group'
+    ... )
     >>> send_inquiry.validate()
     False
 
@@ -158,7 +164,10 @@ If you need error information with these extra validators, extend the decorator 
     ...     def confirm_email(self):
     ...         return self.user_contact == self.user_contact_confirmation
     >>>
-    >>> send_inquiry = SendInquiry(user_name='yu mat', user_contact='drowse314@gmail.com', user_contact_confirmation='drose@gmail.com', message='cannot post messages to my group')
+    >>> send_inquiry = SendInquiry(
+    ...     user_name='yu mat', user_contact='drowse314@gmail.com', user_contact_confirmation='drose@gmail.com',
+    ...     message='cannot post messages to my group'
+    ... )
     >>> send_inquiry.validate()
     False
     >>> send_inquiry.errors
