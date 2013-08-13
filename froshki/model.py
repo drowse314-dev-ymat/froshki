@@ -10,8 +10,6 @@
     :license: BSD, see LICENSE for more details.
 """
 
-from froshki.meta import with_metaclass, Prebuilt
-
 
 class Attribute(object):
     """
@@ -140,7 +138,7 @@ class ValidatorMethod(object):
 validation_hook = ValidatorMethod
 
 
-class Froshki(with_metaclass(Prebuilt)):
+class Froshki(object):
     """
     Base class for Froshki objetcs.
 
@@ -247,15 +245,7 @@ class Froshki(with_metaclass(Prebuilt)):
             base_dict = base.__dict__
             for name in base_dict:
                 obj = base_dict[name]
-                # Any `attribute_class` instances on bases can be assumed as already wrapped up
-                # with `descriptor_class`, thanks to the `Prebuilt` metaclass.
-                if isinstance(obj, descriptor_class):
-                    attr_names.append(name)
-                    if obj.attr_key_alias is not None:
-                        attr_aliases[obj.attr_key_alias] = name
-                # Also capture `attribute_class` instances for attribute mixins, which are
-                # not subclasses of `Froshki`.
-                elif isinstance(obj, attribute_class):
+                if isinstance(obj, attribute_class):
                     attr_names.append(name)
                     attr_descriptor = descriptor_class(
                         name, obj,
@@ -264,6 +254,12 @@ class Froshki(with_metaclass(Prebuilt)):
                     setattr(klass, name, attr_descriptor)
                     if obj.key_alias is not None:
                         attr_aliases[obj.key_alias] = name
+                # Also capture `descriptor_class` instances, for the cases when its bases
+                # have been instantiated before subclassed.
+                elif isinstance(obj, descriptor_class):
+                    attr_names.append(name)
+                    if obj.attr_key_alias is not None:
+                        attr_aliases[obj.attr_key_alias] = name
         return attr_names, attr_aliases
 
     @classmethod
